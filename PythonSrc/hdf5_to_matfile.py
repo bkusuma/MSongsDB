@@ -34,9 +34,9 @@ try:
     import scipy.io as sio
     import numpy as np
 except ImportError:
-    print 'ERROR: you need scipy and numpy to create matfiles!'
-    print 'both freely available at: http://www.scipy.org/'
-    raise
+    print('ERROR: You need SciPy and NumPy to create .mat files!')
+    print('Both are freely available at: http://www.scipy.org/')
+    sys.exit(1) # Or raise the original error if preferred
 # project code
 import hdf5_getters
 import utils
@@ -62,25 +62,26 @@ def transfer(h5path,matpath=None,force=False):
     """
     # sanity checks
     if not os.path.isfile(h5path):
-        print 'path to HF5 files does not exist:',h5path
+        print('Path to HDF5 file does not exist:', h5path)
         return False
     if not os.path.splitext(h5path)[1] == '.h5':
-        print 'expecting a .h5 extension for file:',h5path
+        print('Expecting a .h5 extension for file:', h5path)
         return False
     # check matfile
     if matpath is None:
         matpath = os.path.splitext(h5path)[0] + '.mat'
     if os.path.exists(matpath):
         if force:
-            print 'overwriting file:',matpath
+            print('Overwriting file:', matpath)
         else:
-            print 'matfile',matpath,'already exists (delete or force):'
+            print('Matfile', matpath, 'already exists (delete or use --force).')
             return False
     # get all getters! we assume that all we need is in hdf5_getters.py
     # further assume that they have the form get_blablabla and that's the
     # only thing that has that form
-    getters = filter(lambda x: x[:4] == 'get_', hdf5_getters.__dict__.keys())
-    getters.remove("get_num_songs") # special case
+    getters_list = [f_name for f_name in dir(hdf5_getters) if f_name.startswith('get_')]
+    if "get_num_songs" in getters_list:
+        getters_list.remove("get_num_songs") # special case
     # open h5 file
     h5 = hdf5_getters.open_h5_file_read(h5path)
     # transfer
@@ -88,20 +89,20 @@ def transfer(h5path,matpath=None,force=False):
     matdata = {'transfer_note':'transferred on '+time.ctime()+' from file: '+h5path}
     try:
         # iterate over songs
-        for songidx in xrange(nSongs):
+        for songidx in range(nSongs):
             # iterate over getter
-            for getter in getters:
+            for getter in getters_list:
                 gettername = getter[4:]
                 if nSongs > 1:
                     gettername += str(songidx+1)
                 data = hdf5_getters.__getattribute__(getter)(h5,songidx)
                 matdata[gettername] = data
     except MemoryError:
-        print 'Memory Error with file:',h5path
-        print 'All data has to be loaded in memory before being saved as matfile'
-        print 'Is this an aggregated / summary file with tons of songs?'
-        print 'This code is optimized for files containing one song,'
-        print 'but write me an email! (TBM)'
+        print('Memory Error with file:', h5path)
+        print('All data has to be loaded in memory before being saved as a .mat file.')
+        print('Is this an aggregated / summary file with many songs?')
+        print('This code is optimized for files containing one song.')
+        print('Contact the author for assistance with large files. (TBM)')
         raise
     finally:
         # close h5
@@ -115,28 +116,28 @@ def transfer(h5path,matpath=None,force=False):
 
 def die_with_usage():
     """ HELP MENU """
-    print 'hdf5_to_matfile.py'
-    print 'Transform a song file in HDF5 format to a matfile'
-    print 'with the same information.'
-    print ' '
-    print 'usage:'
-    print '   python hdf5_to_matfile.py <DIR/FILE>'
-    print 'PARAM'
-    print '   <DIR/FILE>   if a file TR123.h5, creates TR123.mat in the same dir'
-    print '                if a dir, do it for all .h5 files in every subdirectory'
-    print ' '
-    print 'REQUIREMENTS'
-    print '   as usual: HDF5 C library, numpy/scipy, pytables'
-    print ' '
-    print 'NOTE: the main function is "transfer", you can use it in your script,'
-    print 'for instance if you come up with a subset of all songs that are of'
-    print 'interest to you, just pass in each song path.'
-    print 'Also, data for each song is loaded in memory, can be heavy if you have'
-    print 'an aggregated / summary HDF5 file.'
-    print ' '
-    print 'copyright: T. Bertin-Mahieux (2010) Columbia University'
-    print 'tb2332@columbia.edu'
-    print 'Million Song Dataset project with LabROSA and the Echo Nest'
+    print('hdf5_to_matfile.py')
+    print('Transforms a song file in HDF5 format to a .mat file')
+    print('with the same information.')
+    print('')
+    print('Usage:')
+    print('  python hdf5_to_matfile.py <DIR_OR_FILE_PATH>')
+    print('\nPARAMS:')
+    print('  <DIR_OR_FILE_PATH>   - If a file (e.g., TR123.h5), creates TR123.mat in the same directory.')
+    print('                         - If a directory, processes all .h5 files in every subdirectory.')
+    print('')
+    print('REQUIREMENTS:')
+    print('  HDF5 C library, NumPy, SciPy, PyTables')
+    print('')
+    print('NOTE:')
+    print('  The main function is "transfer", which you can use in your scripts.')
+    print('  For instance, if you have a subset of songs of interest, pass each song path to "transfer".')
+    print('  Data for each song is loaded into memory, which can be resource-intensive for')
+    print('  aggregated / summary HDF5 files containing many songs.')
+    print('')
+    print('Copyright: T. Bertin-Mahieux (2010) Columbia University')
+    print('tb2332@columbia.edu')
+    print('Million Song Dataset project with LabROSA and The Echo Nest')
     sys.exit(0)
 
 if __name__ == '__main__':
@@ -147,27 +148,27 @@ if __name__ == '__main__':
 
     # GET DIR/FILE
     if not os.path.exists(sys.argv[1]):
-        print 'file or dir:',sys.argv[1],'does not exist.'
+        print('File or directory:', sys.argv[1], 'does not exist.')
         sys.exit(0)
     if os.path.isfile(sys.argv[1]):
         if os.path.splitext(sys.argv[1])[1] != '.h5':
-            print 'we expect a .h5 extension for file:',sys.argv[1]
+            print('We expect a .h5 extension for file:', sys.argv[1])
             sys.exit(0)
         allh5files = [ os.path.abspath(sys.argv[1]) ]
     elif not os.path.isdir(sys.argv[1]):
-        print sys.argv[1],"is neither a file nor a directory? confused... a link? c'est klug?"
+        print(sys.argv[1], "is neither a file nor a directory. Confused... a link?")
         sys.exit(0)
     else:
         allh5files = utils.get_all_files(sys.argv[1],ext='.h5')
     if len(allh5files) == 0:
-        print 'no .h5 file found, sorry, check directory you gave us:',sys.argv[1]
+        print('No .h5 files found. Please check the directory:', sys.argv[1])
 
     # final sanity checks
     for f in allh5files:
         assert os.path.splitext(f)[1] == '.h5','file with wrong extension? should have been caught earlier... file='+f
     nFiles = len(allh5files)
     if nFiles > 1000:
-        print 'you are creating',nFiles,'new matlab files, hope you have the space and time!'
+        print('You are creating', nFiles, 'new MATLAB files. Hope you have the space and time!')
 
     # let's go!
     cnt = 0
@@ -177,9 +178,9 @@ if __name__ == '__main__':
             cnt += 1
 
     # summary report
-    print 'we did',cnt,'files out of',len(allh5files)
+    print('Processed', cnt, 'files out of', len(allh5files))
     if cnt == len(allh5files):
-        print 'congratulations!'
+        print('Congratulations!')
     
 
     

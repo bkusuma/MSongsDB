@@ -28,30 +28,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
 import sys
-import glob
-import time
-import datetime
 import sqlite3
 
 
 def die_with_usage():
     """ HELP MENU """
-    print 'split_mxm_dataset.py'
-    print '   by T. Bertin-Mahieux (2011) Columbia University'
-    print '      tb2332@columbia.edu'
-    print 'This code splits the full musiXmatch dataset based on the'
-    print 'artist split used for automatic music tagging.'
-    print 'This code is provided more as a demo than anything else,'
-    print 'you should have received the musiXmatch dataset alredy split.'
-    print ''
-    print 'USAGE:'
-    print '  ./split_mxm_dataset.py <mxmset> <tmdb> <test_aids> <train> <test>'
-    print 'PARAMS:'
-    print '     <mxmset>  - full musiXmatch dataset'
-    print '       <tmdb>  - SQLite database track_metadata.db'
-    print '  <test_aids>  - list of test artist IDs (for automatic tagging)'
-    print '      <train>  - output train file'
-    print '       <test>  - output test file'
+    print('split_mxm_dataset.py')
+    print('   by T. Bertin-Mahieux (2011) Columbia University')
+    print('      tb2332@columbia.edu')
+    print('This code splits the full musiXmatch dataset based on the')
+    print('artist split used for automatic music tagging.')
+    print('This code is provided more as a demo than anything else,')
+    print('you should have received the musiXmatch dataset alredy split.')
+    print('')
+    print('USAGE:')
+    print('  ./split_mxm_dataset.py <mxmset> <tmdb> <test_aids> <train> <test>')
+    print('PARAMS:')
+    print('     <mxmset>  - full musiXmatch dataset')
+    print('       <tmdb>  - SQLite database track_metadata.db')
+    print('  <test_aids>  - list of test artist IDs (for automatic tagging)')
+    print('      <train>  - output train file')
+    print('       <test>  - output test file')
     sys.exit(0)
 
 
@@ -70,19 +67,19 @@ if __name__ == '__main__':
 
     # sanity checks
     if not os.path.isfile(mxm_dataset):
-        print 'ERROR: %s does not exist.' % mxm_dataset
+        print('ERROR: %s does not exist.' % mxm_dataset)
         sys.exit(0)
     if not os.path.isfile(tmdb):
-        print 'ERROR: %s does not exist.' % tmdb
+        print('ERROR: %s does not exist.' % tmdb)
         sys.exit(0)
     if not os.path.isfile(testartistsf):
-        print 'ERROR: %s does not exist.' % testartistsf
+        print('ERROR: %s does not exist.' % testartistsf)
         sys.exit(0)
     if os.path.isfile(trainf):
-        print 'ERROR: %s already exists.' % trainf
+        print('ERROR: %s already exists.' % trainf)
         sys.exit(0)
     if os.path.isfile(testf):
-        print 'ERROR: %s already exists.' % testf
+        print('ERROR: %s already exists.' % testf)
         sys.exit(0)
 
     # open connection to track_metadata.db
@@ -92,7 +89,7 @@ if __name__ == '__main__':
     q = "CREATE TEMP TABLE testaids (aid TEXT PRIMARY KEY)"
     conn.execute(q)
     f = open(testartistsf, 'r')
-    for line in f.xreadlines():
+    for line in f:
         if line == '' or line.strip() == '' or line[0] == '#':
             continue
         q = "INSERT INTO testaids VALUES ('" + line.strip() + "')"
@@ -102,7 +99,7 @@ if __name__ == '__main__':
     # verbose: check number of artists
     q = "SELECT aid FROM testaids"
     res = conn.execute(q)
-    print 'We have %d test artists.' % len(res.fetchall())
+    print('We have %d test artists.' % len(res.fetchall()))
 
     def is_test(tid):
         """
@@ -132,7 +129,7 @@ if __name__ == '__main__':
     cnt_test = 0
 
     # iterate over lines in the full musiXmatch dataset
-    for line in fIn.xreadlines():
+    for line in fIn:
         if line == '' or line.strip() == '':
             continue
         # comment
@@ -163,5 +160,5 @@ if __name__ == '__main__':
     conn.close()
 
     # done
-    print 'DONE! We have %d train tracks and %d test tracks' % (cnt_train,
-                                                                cnt_test)
+    print('DONE! We have %d train tracks and %d test tracks' % (cnt_train,
+                                                                cnt_test))

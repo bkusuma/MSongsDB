@@ -7,6 +7,7 @@ between LabROSA and the Echo Nest
 
 This folder contains code to perform segmentation
 on the Million Song dataset data.
-Out starting point is the code from Luke Barrington
+Our starting point is the code from Luke Barrington
 at UCSD:
-http://cosmal.ucsd.edu/cal/projects/segment/
+old link: http://cosmal.ucsd.edu/cal/projects/segment/
+new link: http://calab1.ucsd.edu/~cosmal/cal/projects/segment/

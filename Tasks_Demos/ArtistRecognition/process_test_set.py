@@ -40,7 +40,7 @@ import process_train_set as TRAIN # for the features
 try:
     import scikits.ann as ANN
 except ImportError:
-    print 'you need scikits.ann: http://www.scipy.org/scipy/scikits/wiki/AnnWrapper'
+    print('you need scikits.ann: http://www.scipy.org/scipy/scikits/wiki/AnnWrapper')
     sys.exit(0)
     
 # error passing problems, useful for multiprocessing
@@ -101,7 +101,7 @@ def do_prediction(processed_feats,kd,h5model,K=1):
     """
     res = kd.knn(processed_feats,K)
     if K == 1:
-        index = res[0][0]
+        index = res[0][0] # type: ignore
         pred_artist_id = h5model.root.data.artist_id[index]
     else:
         # find artist with most results
@@ -109,11 +109,11 @@ def do_prediction(processed_feats,kd,h5model,K=1):
         indices = res[0].flatten()
         artists = {}
         for pos,i in enumerate(indices):
-            artist_id = h5model.root.data.artist_id[i]
-            if not artist_id in artists.keys():
-                artists[artist_id] = [1,-pos]
+            current_artist_id = h5model.root.data.artist_id[i]
+            if current_artist_id not in artists:
+                artists[current_artist_id] = [1,-pos]
             else:
-                artists[artist_id][0] += 1
+                artists[current_artist_id][0] += 1
         tuples = zip(artists.keys(),artists.values())
         res = sorted(tuples,key=itemgetter(1),reverse=True)
         pred_artist_id = res[0][0]
@@ -132,13 +132,14 @@ def process_filelist_test(filelist=None,model=None,tmpfilename=None,K=1):
        K            - K-nn parameter (default=1)
     """
     # sanity check
-    for arg in locals().values():
-        assert not arg is None,'process_filelist_train, missing an argument, something still None'
+    for arg_name, arg_value in locals().items():
+        if arg_name != 'K' and arg_value is None: # K has a default, others are expected
+            assert arg_value is not None, f'process_filelist_test, missing an argument: {arg_name}'
     if os.path.isfile(tmpfilename):
-        print 'ERROR: file',tmpfilename,'already exists.'
+        print('ERROR: file', tmpfilename, 'already exists.')
         return
     if not os.path.isfile(model):
-        print 'ERROR: model',model,'does not exist.'
+        print('ERROR: model', model, 'does not exist.')
         return
     # dimension fixed (12-dimensional timbre vector)
     ndim = 12
@@ -160,15 +161,18 @@ def process_filelist_test(filelist=None,model=None,tmpfilename=None,K=1):
         cnt_f += 1
         # verbose
         if cnt_f % 50000 == 0:
-            print 'training... checking file #',cnt_f
+            print('testing... checking file #', cnt_f)
         # check what file/song is this
         h5 = GETTERS.open_h5_file_read(f)
         artist_id = GETTERS.get_artist_id(h5)
         track_id = GETTERS.get_track_id(h5)
-        if track_id in testsongs: # just in case, but should not be necessary
-            print 'Found test track_id during training? weird.',track_id
-            h5.close()
-            continue
+        # The 'testsongs' variable is not defined in this function's scope.
+        # This check might be referring to a global variable or is a leftover.
+        # Given 'filelist' contains test song files, this check's original intent is unclear here.
+        # If it were to check against a global set of test track IDs (e.g., testsongs_set from __main__):
+        # if track_id in testsongs_set: # Assuming testsongs_set is the intended global
+        #     print('DEBUG: Track ID', track_id, 'is a test track, as expected.')
+        # For now, commenting out the problematic block as 'testsongs' is undefined here.
         # extract features, then close file
         processed_feats = compute_features(h5)
         h5.close()
@@ -210,10 +214,10 @@ def process_filelist_test_main_pass(nthreads,model,testsongs,K):
     # prepare params for each thread
     params_list = []
     default_params = {'model':model,'K':K}
-    tmpfiles_stub = 'mainpasstest_artistrec_tmp_output_'
-    tmpfiles = map(lambda x: os.path.join(os.path.abspath('.'),tmpfiles_stub+str(x)+'.h5'),range(nthreads))
+    tmpfiles_stub = 'mainpasstest_artistrec_tmp_output_' # type: ignore
+    tmpfiles = [os.path.join(os.path.abspath('.'),tmpfiles_stub+str(x)+'.h5') for x in range(nthreads)] # type: ignore
     nfiles_per_thread = int(np.ceil(len(testsongs) * 1. / nthreads))
-    for k in range(nthreads):
+    for k in range(nthreads): # type: ignore
         # params for one specific thread
         p = copy.deepcopy(default_params)
         p['tmpfilename'] = tmpfiles[k]
@@ -225,15 +229,15 @@ def process_filelist_test_main_pass(nthreads,model,testsongs,K):
         pool.map(process_filelist_test_wrapper, params_list)
         pool.close()
         pool.join()
-    except KeyboardInterruptError:
-        print 'MULTIPROCESSING'
-        print 'stopping multiprocessing due to a keyboard interrupt'
+    except KeyboardInterruptError: # type: ignore
+        print('MULTIPROCESSING')
+        print('stopping multiprocessing due to a keyboard interrupt')
         pool.terminate()
         pool.join()
         return None
-    except Exception, e:
-        print 'MULTIPROCESSING'
-        print 'got exception: %r, terminating the pool' % (e,)
+    except Exception as e:
+        print('MULTIPROCESSING')
+        print('got exception: %r, terminating the pool' % (e,))
         pool.terminate()
         pool.join()
         return None
@@ -259,12 +263,12 @@ def test(nthreads,model,testsongs,K):
     # do main pass
     tmpfiles = process_filelist_test_main_pass(nthreads,model,testsongs,K)
     if tmpfiles is None:
-        print 'Something went wrong, tmpfiles are None'
+        print('Something went wrong, tmpfiles are None')
         return
     # intermediate time
     t2 = time.time()
-    stimelen = str(datetime.timedelta(seconds=t2-t1))
-    print 'Main pass done after',stimelen; sys.stdout.flush()
+    stimelen = str(datetime.timedelta(seconds=t2-t1)) # type: ignore
+    print('Main pass done after', stimelen); sys.stdout.flush()
     # aggregate temp files
     artist_id_found = 0
     total_predictions = 0
@@ -279,33 +283,33 @@ def test(nthreads,model,testsongs,K):
         os.remove(tmpf)
     # final time
     t3 = time.time()
-    stimelen = str(datetime.timedelta(seconds=t3-t1))
-    print 'Whole testing done after',stimelen
+    stimelen = str(datetime.timedelta(seconds=t3-t1)) # type: ignore
+    print('Whole testing done after', stimelen)
     # results
-    print 'We found the right artist_id',artist_id_found,'times out of',total_predictions,'predictions.'
-    print 'e.g., accuracy is:',artist_id_found*1./total_predictions
+    print('We found the right artist_id', artist_id_found, 'times out of', total_predictions, 'predictions.')
+    print('e.g., accuracy is:', artist_id_found / total_predictions if total_predictions > 0 else 0)
     # done
     return
 
 
 def die_with_usage():
     """ HELP MENU """
-    print 'process_test_set.py'
-    print '   by T. Bertin-Mahieux (2011) Columbia University'
-    print '      tb2332@columbia.edu'
-    print 'Code to perform artist recognition on the Million Song Dataset.'
-    print 'This performs the evaluation of a trained KNN model.'
-    print 'REQUIRES ANN LIBRARY and its python wrapper.'
-    print 'USAGE:'
-    print '  python process_test_set.py [FLAGS] <MSD_DIR> <model> <testsongs> <tmdb>'
-    print 'PARAMS:'
-    print '        MSD_DIR  - main directory of the MSD dataset'
-    print '          model  - h5 file where the training is saved'
-    print '      testsongs  - file containing test songs (to ignore)'
-    print '           tmdb  - path to track_metadata.db'
-    print 'FLAGS:'
-    print '           -K n  - K-nn parameter (default=1)'
-    print '    -nthreads n  - number of threads to use (default: 1)'
+    print('process_test_set.py')
+    print('   by T. Bertin-Mahieux (2011) Columbia University')
+    print('      tb2332@columbia.edu')
+    print('Code to perform artist recognition on the Million Song Dataset.')
+    print('This performs the evaluation of a trained KNN model.')
+    print('REQUIRES ANN LIBRARY and its python wrapper.')
+    print('USAGE:')
+    print('  python process_test_set.py [FLAGS] <MSD_DIR> <model> <testsongs> <tmdb>')
+    print('PARAMS:')
+    print('        MSD_DIR  - main directory of the MSD dataset')
+    print('          model  - h5 file where the training is saved')
+    print('      testsongs  - file containing test songs (to ignore)')
+    print('           tmdb  - path to track_metadata.db')
+    print('FLAGS:')
+    print('           -K n  - K-nn parameter (default=1)')
+    print('    -nthreads n  - number of threads to use (default: 1)')
     sys.exit(0)
 
 
@@ -343,26 +347,26 @@ if __name__ == '__main__':
 
     # read test artists
     if not os.path.isfile(testsongs):
-        print 'ERROR:',testsongs,'does not exist.'
+        print('ERROR:', testsongs, 'does not exist.')
         sys.exit(0)
     testsongs_set = set()
     f = open(testsongs,'r')
-    for line in f.xreadlines():
+    for line in f:
         if line == '' or line.strip() == '':
             continue
         testsongs_set.add( line.strip().split('<SEP>')[0] )
     f.close()
-    testsongs_list = map(lambda x: fullpath_from_trackid(msd_dir,x), testsongs_set)
+    testsongs_list = [fullpath_from_trackid(msd_dir,x) for x in testsongs_set]
 
     # settings
-    print 'msd dir:',msd_dir
-    print 'testsongs:',testsongs,'('+str(len(testsongs_set))+' songs)'
-    print 'tmdb:',tmdb
-    print 'nthreads:',nthreads
-    print 'K:',K
+    print('msd dir:', msd_dir)
+    print('testsongs:', testsongs, '(' + str(len(testsongs_set)) + ' songs)')
+    print('tmdb:', tmdb)
+    print('nthreads:', nthreads)
+    print('K:', K)
 
     # launch testing
     test(nthreads,model,testsongs_list,K)
 
     # done
-    print 'DONE!'
+    print('DONE!')

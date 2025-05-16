@@ -117,8 +117,9 @@ def process_filelist_train(filelist=None,testsongs=None,tmpfilename=None):
        tmpfilename  - where to save our processed features
     """
     # sanity check
-    for arg in locals().values():
-        assert not arg is None,'process_filelist_train, missing an argument, something still None'
+    # Check that all arguments (except those with defaults if any) are provided
+    for arg_name, arg_value in locals().items():
+        assert arg_value is not None, f'process_filelist_train, missing an argument: {arg_name}'
     if os.path.isfile(tmpfilename):
         print 'ERROR: file',tmpfilename,'already exists.'
         return
@@ -138,12 +139,12 @@ def process_filelist_train(filelist=None,testsongs=None,tmpfilename=None):
         cnt_f += 1
         # verbose
         if cnt_f % 50000 == 0:
-            print 'training... checking file #',cnt_f
+            print('training... checking file #', cnt_f)
         # check what file/song is this
         h5 = GETTERS.open_h5_file_read(f)
         artist_id = GETTERS.get_artist_id(h5)
         track_id = GETTERS.get_track_id(h5)
-        if track_id in testsongs: # just in case, but should not be necessary
+        if track_id in testsongs: # type: ignore # just in case, but should not be necessary
             print 'Found test track_id during training? weird.',track_id
             h5.close()
             continue
@@ -184,24 +185,24 @@ def process_filelist_train_main_pass(nthreads,maindir,testsongs,trainsongs=None)
     # sanity checks
     assert nthreads >= 0,'Come on, give me at least one thread!'
     if not os.path.isdir(maindir):
-        print 'ERROR: directory',maindir,'does not exist.'
+        print('ERROR: directory', maindir, 'does not exist.')
         return None
     # get all files
     if trainsongs is None:
         allfiles = get_all_files(maindir)
     else:
-        allfiles = trainsongs
+        allfiles = trainsongs # type: ignore
     assert len(allfiles)>0,'Come on, give me at least one file in '+maindir+'!'
     if nthreads > len(allfiles):
         nthreads = len(allfiles)
-        print 'more threads than files, reducing number of threads to:',nthreads
-    print 'WE HAVE',len(allfiles),'POTENTIAL TRAIN FILES'
+        print('more threads than files, reducing number of threads to:', nthreads)
+    print('WE HAVE', len(allfiles), 'POTENTIAL TRAIN FILES')
     # prepare params for each thread
     params_list = []
     default_params = {'testsongs':testsongs}
     tmpfiles_stub = 'mainpass_artistrec_tmp_output_'
-    tmpfiles = map(lambda x: os.path.join(os.path.abspath('.'),tmpfiles_stub+str(x)+'.h5'),range(nthreads))
-    nfiles_per_thread = int(np.ceil(len(allfiles) * 1. / nthreads))
+    tmpfiles = [os.path.join(os.path.abspath('.'),tmpfiles_stub+str(x)+'.h5') for x in range(nthreads)]
+    nfiles_per_thread = int(np.ceil(len(allfiles) / nthreads))
     for k in range(nthreads):
         # params for one specific thread
         p = copy.deepcopy(default_params)
@@ -214,15 +215,15 @@ def process_filelist_train_main_pass(nthreads,maindir,testsongs,trainsongs=None)
         pool.map(process_filelist_train_wrapper, params_list)
         pool.close()
         pool.join()
-    except KeyboardInterruptError:
-        print 'MULTIPROCESSING'
-        print 'stopping multiprocessing due to a keyboard interrupt'
+    except KeyboardInterruptError: # type: ignore
+        print('MULTIPROCESSING')
+        print('stopping multiprocessing due to a keyboard interrupt')
         pool.terminate()
         pool.join()
         return None
-    except Exception, e:
-        print 'MULTIPROCESSING'
-        print 'got exception: %r, terminating the pool' % (e,)
+    except Exception as e:
+        print('MULTIPROCESSING')
+        print('got exception: %r, terminating the pool' % (e,))
         pool.terminate()
         pool.join()
         return None
@@ -246,19 +247,19 @@ def train(nthreads,maindir,output,testsongs,trainsongs=None):
     """
     # sanity checks
     if os.path.isfile(output):
-        print 'ERROR: file',output,'already exists.'
+        print('ERROR: file', output, 'already exists.')
         return
     # initial time
     t1 = time.time()
     # do main pass
     tmpfiles = process_filelist_train_main_pass(nthreads,maindir,testsongs,trainsongs=trainsongs)
     if tmpfiles is None:
-        print 'Something went wrong, tmpfiles are None'
+        print('Something went wrong, tmpfiles are None')
         return
     # intermediate time
     t2 = time.time()
     stimelen = str(datetime.timedelta(seconds=t2-t1))
-    print 'Main pass done after',stimelen; sys.stdout.flush()
+    print('Main pass done after', stimelen); sys.stdout.flush()
     # find approximate number of rows per tmpfiles
     h5 = tables.openFile(tmpfiles[0],'r')
     nrows = h5.root.data.artist_id.shape[0] * len(tmpfiles)
@@ -283,28 +284,28 @@ def train(nthreads,maindir,output,testsongs,trainsongs=None):
     # final time
     t3 = time.time()
     stimelen = str(datetime.timedelta(seconds=t3-t1))
-    print 'Whole training done after',stimelen
+    print('Whole training done after', stimelen)
     # done
     return
 
 
 def die_with_usage():
     """ HELP MENU """
-    print 'process_train_set.py'
-    print '   by T. Bertin-Mahieux (2011) Columbia University'
-    print '      tb2332@columbia.edu'
-    print 'Code to perform artist recognition on the Million Song Dataset.'
-    print 'This performs the training of the KNN model.'
-    print 'USAGE:'
-    print '  python process_train_set.py [FLAGS] <MSD_DIR> <testsongs> <tmdb> <output>'
-    print 'PARAMS:'
-    print '        MSD_DIR  - main directory of the MSD dataset'
-    print '      testsongs  - file containing test songs (to ignore)'
-    print '           tmdb  - path to track_metadata.db'
-    print '         output  - output filename (.h5 file)'
-    print 'FLAGS:'
-    print '    -nthreads n  - number of threads to use (default: 1)'
-    print '     -onlytesta  - only train on test artists (makes problem easier!!!)'
+    print('process_train_set.py')
+    print('   by T. Bertin-Mahieux (2011) Columbia University')
+    print('      tb2332@columbia.edu')
+    print('Code to perform artist recognition on the Million Song Dataset.')
+    print('This performs the training of the KNN model.')
+    print('USAGE:')
+    print('  python process_train_set.py [FLAGS] <MSD_DIR> <testsongs> <tmdb> <output>')
+    print('PARAMS:')
+    print('        MSD_DIR  - main directory of the MSD dataset')
+    print('      testsongs  - file containing test songs (to ignore)')
+    print('           tmdb  - path to track_metadata.db')
+    print('         output  - output filename (.h5 file)')
+    print('FLAGS:')
+    print('    -nthreads n  - number of threads to use (default: 1)')
+    print('     -onlytesta  - only train on test artists (makes problem easier!!!)')
     sys.exit(0)
 
 
@@ -335,11 +336,11 @@ if __name__ == '__main__':
 
     # read test artists
     if not os.path.isfile(testsongs):
-        print 'ERROR:',testsongs,'does not exist.'
+        print('ERROR:', testsongs, 'does not exist.')
         sys.exit(0)
     testsongs_set = set()
     f = open(testsongs,'r')
-    for line in f.xreadlines():
+    for line in f:
         if line == '' or line.strip() == '':
             continue
         testsongs_set.add( line.strip().split('<SEP>')[0] )
@@ -382,29 +383,29 @@ if __name__ == '__main__':
     res = conn.execute(q)
     data = res.fetchall()
     conn.close()
-    print 'Found',len(data),'training files from track_metadata.db'
-    trainsongs = map(lambda x: fullpath_from_trackid(msd_dir,x[0]),data)
+    print('Found', len(data), 'training files from track_metadata.db')
+    trainsongs = [fullpath_from_trackid(msd_dir,x[0]) for x in data]
     assert os.path.isfile(trainsongs[0]),'first training file does not exist? '+trainsongs[0]
 
     # settings
-    print 'msd dir:',msd_dir
-    print 'output:',output
-    print 'testsongs:',testsongs,'('+str(len(testsongs_set))+' songs)'
-    print 'trainsongs: got',len(trainsongs),'songs'
-    print 'tmdb:',tmdb
-    print 'nthreads:',nthreads
-    print 'onlytesta:',onlytesta
+    print('msd dir:', msd_dir)
+    print('output:', output)
+    print('testsongs:', testsongs, '(' + str(len(testsongs_set)) + ' songs)')
+    print('trainsongs: got', len(trainsongs), 'songs')
+    print('tmdb:', tmdb)
+    print('nthreads:', nthreads)
+    print('onlytesta:', onlytesta)
 
     # sanity checks
     if not os.path.isdir(msd_dir):
-        print 'ERROR:',msd_dir,'is not a directory.'
+        print('ERROR:', msd_dir, 'is not a directory.')
         sys.exit(0)
     if os.path.isfile(output):
-        print 'ERROR: file',output,'already exists.'
+        print('ERROR: file', output, 'already exists.')
         sys.exit(0)
 
     # launch training
     train(nthreads,msd_dir,output,testsongs_set,trainsongs)
 
     # done
-    print 'DONE!'
+    print('DONE!')

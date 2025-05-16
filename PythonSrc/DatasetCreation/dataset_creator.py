@@ -97,14 +97,14 @@ class my_trackset():
             if self.ar[k] == objh:
                 self.ar[k] = 0
                 return
-        print 'ERROR: my_trackset, tried to remove inexisting element, obj=',obj,'and hash=',objh
+        print('ERROR: my_trackset, tried to remove inexisting element, obj=',obj,'and hash=',objh)
     def add(self,obj):
         objh = hash(obj)
         for k in range(len(self.ar)):
             if self.ar[k] == 0:
                 self.ar[k] = objh
                 return
-        print 'ERROR: shared memory trackset full!!! fake a keyboardinterrupt to stop'
+        print('ERROR: shared memory trackset full!!! fake a keyboardinterrupt to stop')
         raise KeyboardInterrupt
     def __contains__(self,obj):
         return hash(obj) in self.ar
@@ -142,11 +142,11 @@ def get_lock_track(trackid):
     """
     got_lock = TRACKSET_LOCK.acquire() # blocking by default
     if not got_lock:
-        print 'ERROR: could not get TRACKSET_LOCK locked?'
+        print('ERROR: could not get TRACKSET_LOCK locked?')
         return False
     if TRACKSET_CLOSED:
         TRACKSET_LOCK.release()
-        print 'RELEASED LOCK BECAUSE TRACKSET_CLOSED'
+        print('RELEASED LOCK BECAUSE TRACKSET_CLOSED')
         return False
     if trackid in TRACKSET:
         TRACKSET_LOCK.release()
@@ -163,15 +163,15 @@ def release_lock_track(trackid):
     """
     got_lock = TRACKSET_LOCK.acquire() # blocking by default
     if not got_lock:
-        print 'ERROR: could not get TRACKSET_LOCK lock?'
+        print('ERROR: could not get TRACKSET_LOCK lock?')
         return False
     if TRACKSET_CLOSED:
         TRACKSET_LOCK.release()
-        print 'RELEASED LOCK BECAUSE TRACKSET_CLOSED, track=',trackid
+        print('RELEASED LOCK BECAUSE TRACKSET_CLOSED, track=',trackid)
         return False
     if not trackid in TRACKSET:
         TRACKSET_LOCK.release()
-        print 'WARNING: releasing a song you dont own, trackid=',trackid;sys.stdout.flush()
+        print('WARNING: releasing a song you dont own, trackid=',trackid;sys.stdout.flush())
         return False
     TRACKSET.remove(trackid)
     TRACKSET_LOCK.release()
@@ -203,7 +203,7 @@ def count_h5_files(basedir):
             cnt += len(files)
         return cnt
     except (IOError,OSError),e:
-        print 'ERROR:',e,'in count_h5_files, return 0'
+        print('ERROR:',e,'in count_h5_files, return 0')
         return 0
 
 def create_track_file(maindir,trackid,track,song,artist,mbconnect=None):
@@ -274,15 +274,15 @@ def create_track_file(maindir,trackid,track,song,artist,mbconnect=None):
                 except IOError:
                     pass
                 # print and wait
-                print 'ERROR creating track:',trackid,'on',time.ctime(),'(pid='+str(os.getpid())+')'
-                print e
+                print('ERROR creating track:',trackid,'on',time.ctime(),'(pid='+str(os.getpid())+')')
+                print(e)
                 if try_cnt < 100:
-                    print '(try again in',SLEEPTIME,'seconds)'
+                    print('(try again in',SLEEPTIME,'seconds)')
                     time.sleep(SLEEPTIME)
                     continue
                 # give up
                 else:
-                    print 'we give up after',try_cnt,'tries'
+                    print('we give up after',try_cnt,'tries')
                     release_lock_track(trackid)
                     return False
             # move tmp file to real file
