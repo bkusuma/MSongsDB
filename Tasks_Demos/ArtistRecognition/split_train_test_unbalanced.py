@@ -44,21 +44,21 @@ NUMSONGS=20
 
 def die_with_usage():
     """ HELP MENU """
-    print 'split_train_test_unbalanced.py'
-    print '  by T. Bertin-Mahieux (2010) Columbia University'
-    print '     tb2332@columbia.edu'
-    print 'GOAL'
-    print '  Split the list of songs into train and test for artist recognition.'
-    print '  We only consider artists with at least 20 songs.'
-    print '  The training set consists of 2/3 of all songs from each of these artists.'
-    print 'USAGE'
-    print '  python split_train_test_unbalanced.py <track_metadata.db> <train.txt> <test.txt>'
-    print 'PARAMS'
-    print ' track_metadata.db    - SQLite database containing metadata for each track'
-    print '         train.txt    - list of Echo Nest artist ID'
-    print '          test.txt    - list of Echo Nest artist ID'
-    print 'NOTE: this gives a train set of 541,892 songs and a test set of 261,503 songs.'
-    print '      See songs_train_unbalanced.txt and songs_test_unbalanced.txt.'
+    print('split_train_test_unbalanced.py')
+    print('  by T. Bertin-Mahieux (2010) Columbia University')
+    print('     tb2332@columbia.edu')
+    print('GOAL')
+    print('  Split the list of songs into train and test for artist recognition.')
+    print('  We only consider artists with at least 20 songs.')
+    print('  The training set consists of 2/3 of all songs from each of these artists.')
+    print('USAGE')
+    print('  python split_train_test_unbalanced.py <track_metadata.db> <train.txt> <test.txt>')
+    print('PARAMS')
+    print(' track_metadata.db    - SQLite database containing metadata for each track')
+    print('         train.txt    - list of Echo Nest artist ID')
+    print('          test.txt    - list of Echo Nest artist ID')
+    print('NOTE: this gives a train set of 541,892 songs and a test set of 261,503 songs.')
+    print('      See songs_train_unbalanced.txt and songs_test_unbalanced.txt.')
     sys.exit(0)
 
 
@@ -75,13 +75,13 @@ if __name__ == '__main__':
 
     # sanity checks
     if not os.path.isfile(dbfile):
-        print 'ERROR: database not found:',dbfile
+        print('ERROR: database not found:', dbfile)
         sys.exit(0)
     if os.path.exists(output_train):
-        print 'ERROR:',output_train,'already exists! delete or provide a new name'
+        print('ERROR:', output_train, 'already exists! delete or provide a new name')
         sys.exit(0)
     if os.path.exists(output_test):
-        print 'ERROR:',output_test,'already exists! delete or provide a new name'
+        print('ERROR:', output_test, 'already exists! delete or provide a new name')
         sys.exit(0)
 
     # open connection
@@ -94,8 +94,8 @@ if __name__ == '__main__':
     sorted_artists = sorted(data,key=itemgetter(1,0),reverse=True)
 
     # find the last artist with that many songs
-    last_pos = np.where(np.array(map(lambda x: x[1],sorted_artists))>=NUMSONGS)[0][-1]
-    print 'We have',last_pos+1,'artists with at least',NUMSONGS,'songs.'
+    last_pos = np.where(np.array([x[1] for x in sorted_artists]) >= NUMSONGS)[0][-1]
+    print('We have', last_pos + 1, 'artists with at least', NUMSONGS, 'songs.')
 
     # open output files
     ftrain = open(output_train,'w')
@@ -109,11 +109,11 @@ if __name__ == '__main__':
         # get songs
         q = "SELECT track_id FROM songs WHERE artist_id='"+aid+"'"
         res = conn.execute(q)
-        tracks = map(lambda x: x[0], res.fetchall())
+        tracks = [x[0] for x in res.fetchall()]
         assert len(tracks)==nsongs,'ERROR: num songs should be '+str(nsongs)+' for '+aid+', got: '+str(len(tracks))
         tracks = sorted(tracks)
         np.random.shuffle(tracks)
-        two_thirds = int(np.ceil(len(tracks) * 2./3.))
+        two_thirds = int(np.ceil(len(tracks) * 2 / 3))
         for t in tracks[:two_thirds]:
             ftrain.write(t+'<SEP>'+aid+'\n')
         for t in tracks[two_thirds:]:
@@ -127,4 +127,4 @@ if __name__ == '__main__':
     conn.close()
 
     # done
-    print 'DONE!'
+    print('DONE!')

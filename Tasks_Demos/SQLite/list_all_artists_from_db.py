@@ -1,3 +1,5 @@
+# python list_all_artists_from_db.py "C:\Users\foste\Desktop\Projects\delistyle\data\full\track_metadata.db" "C:\Users\foste\Desktop\Projects\delistyle\data\reference_lists\artistlist.txt"
+
 """
 Thierry Bertin-Mahieux (2010) Columbia University
 tb2332@columbia.edu
@@ -37,8 +39,8 @@ import time
 try:
     import numpy as np
 except ImportError:
-    print('you need numpy installed to use this program')
-    print('run `pip install numpy` and try again')
+    print('You need numpy installed to use this program.')
+    print('Run `pip install numpy` and try again.')
     sys.exit(0)
 
 
@@ -46,22 +48,21 @@ except ImportError:
 
 def die_with_usage():
     print("""
-    HELP MENU 
-    list_all_artists_from_db.py
-    by T. Bertin-Mahieux (2010) Columbia University
-    
-    mimics the program /Tasks_Demo/NamesAnalysis/list_all_artist.py
-    but assumes the sqlite db track_metadata.py is available
-    i.e. it takes a few second instead of a few hours!
-    
-    To download track_metadata.db, see Million Song website
-    to recreate it, see create_track_metadata.py
+HELP MENU
+list_all_artists_from_db.py
+  by T. Bertin-Mahieux (2010) Columbia University
 
-    Usage:
-        python list_all_artists_from_db.py track_metadata.db output.txt
-        creates a file where each line is: (one line per artist)
-        artist id<SEP>artist mbid<SEP>track id<SEP>artist name
-    """)
+Mimics the program /Tasks_Demo/NamesAnalysis/list_all_artist.py
+but assumes the sqlite db track_metadata.db is available
+i.e. it takes a few seconds instead of a few hours!
+
+To download track_metadata.db, see Million Song website.
+To recreate it, see create_track_metadata_db.py.
+
+Usage:
+  python list_all_artists_from_db.py track_metadata.db output.txt
+  Creates a file where each line is: (one line per artist)
+  artist id<SEP>artist mbid<SEP>track id<SEP>artist name""")
     sys.exit(0)
 
 
@@ -78,10 +79,10 @@ if __name__ == '__main__':
 
     # sanity check
     if not os.path.isfile(dbfile):
-        print('ERROR: can not find database:',dbfile)
+        print('ERROR: Cannot find database:', dbfile)
         sys.exit(0)
     if os.path.exists(output):
-        print('ERROR: file',output,'exists, delete or provide a new name')
+        print('ERROR: File', output, 'exists, delete or provide a new name.')
         sys.exit(0)
 
     # start time
@@ -99,21 +100,20 @@ if __name__ == '__main__':
     q = 'SELECT DISTINCT artist_id FROM songs'
     res = c.execute(q)
     artists = res.fetchall()
-    print('found',len(artists),'distinct artists')
+    print('Found', len(artists), 'distinct artists.')
     assert len(alldata) == len(artists), 'incoherent sizes'
     # close db connection
     c.close()
     conn.close()
 
     # write to file
-    f = open(output,'w')
-    for data in alldata[:100]:
-        #print(data)
-        f.write(data[0]+'<SEP>'+data[1]+'<SEP>'+data[2]+'<SEP>')
-        f.write( data[3] + '\n' )
-    f.close()
+    with open(output, 'w', encoding='utf-8') as f:
+        for artist_id, artist_mbid, track_id, artist_name in alldata:
+            # Ensure all parts are strings before joining, especially if some could be None
+            f.write(str(artist_id) + '<SEP>' + str(artist_mbid) + '<SEP>' + str(track_id) + '<SEP>')
+            f.write(str(artist_name) + '\n')
 
     # done
     t2 = time.time()
     stimelength = str(datetime.timedelta(seconds=t2-t1))
-    print('file',output,'with',len(alldata),'artists created in',stimelength)
+    print('File', output, 'with', len(alldata), 'artists created in', stimelength)

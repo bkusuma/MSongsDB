@@ -38,8 +38,9 @@ from hdf5_getters import *
 try:
     from MBrainzDB import query as QUERYMB
 except ImportError:
-    print 'need pg module and MBrainzDB folder of Python source code if you'
-    print 'want to use musicbrainz related functions, e.g. fill_hdf5_from_musicbrainz'
+    print("Warning: 'pg' module or 'MBrainzDB' not found.")
+    print("MusicBrainz related functions (e.g., fill_hdf5_from_musicbrainz) will not be available.")
+    QUERYMB = None # Define QUERYMB to None so later checks don't cause NameError
 
 
 # description of the different arrays in the song file
@@ -83,11 +84,11 @@ def fill_hdf5_from_artist(h5,artist):
     # fill the metadata arrays
     group = h5.root.metadata
     metadata.cols.idx_similar_artists[0] = 0
-    group.similar_artists.append( np.array(map(lambda x : x.id,artist.get_similar(results=100)),dtype='string') )
+    group.similar_artists.append( np.array([s.id for s in artist.get_similar(results=100)], dtype='S') ) # S for bytestring
     metadata.cols.idx_artist_terms[0] = 0
-    group.artist_terms.append( np.array(map(lambda x : x.name,artist.get_terms()),dtype='string') )
-    group.artist_terms_freq.append( np.array(map(lambda x : x.frequency,artist.get_terms()),dtype='float64') )
-    group.artist_terms_weight.append( np.array(map(lambda x : x.weight,artist.get_terms()),dtype='float64') )
+    group.artist_terms.append( np.array([t.name for t in artist.get_terms()], dtype='S') )
+    group.artist_terms_freq.append( np.array([t.frequency for t in artist.get_terms()], dtype='float64') )
+    group.artist_terms_weight.append( np.array([t.weight for t in artist.get_terms()], dtype='float64') )
     # done, flush
     metadata.flush()
     
@@ -153,39 +154,39 @@ def fill_hdf5_from_track(h5,track):
     group = h5.root.analysis
     # analysis arrays (segments)
     analysis.cols.idx_segments_start[0] = 0
-    group.segments_start.append( np.array(map(lambda x : x['start'],track.segments),dtype='float64') )
+    group.segments_start.append( np.array([s['start'] for s in track.segments], dtype='float64') )
     analysis.cols.idx_segments_confidence[0] = 0
-    group.segments_confidence.append( np.array(map(lambda x : x['confidence'],track.segments),dtype='float64') )
+    group.segments_confidence.append( np.array([s['confidence'] for s in track.segments], dtype='float64') )
     analysis.cols.idx_segments_pitches[0] = 0
-    group.segments_pitches.append( np.array(map(lambda x : x['pitches'],track.segments),dtype='float64') )
+    group.segments_pitches.append( np.array([s['pitches'] for s in track.segments], dtype='float64') )
     analysis.cols.idx_segments_timbre[0] = 0
-    group.segments_timbre.append( np.array(map(lambda x : x['timbre'],track.segments),dtype='float64') )
+    group.segments_timbre.append( np.array([s['timbre'] for s in track.segments], dtype='float64') )
     analysis.cols.idx_segments_loudness_max[0] = 0
-    group.segments_loudness_max.append( np.array(map(lambda x : x['loudness_max'],track.segments),dtype='float64') )
+    group.segments_loudness_max.append( np.array([s['loudness_max'] for s in track.segments], dtype='float64') )
     analysis.cols.idx_segments_loudness_max_time[0] = 0
-    group.segments_loudness_max_time.append( np.array(map(lambda x : x['loudness_max_time'],track.segments),dtype='float64') )
+    group.segments_loudness_max_time.append( np.array([s['loudness_max_time'] for s in track.segments], dtype='float64') )
     analysis.cols.idx_segments_loudness_start[0] = 0
-    group.segments_loudness_start.append( np.array(map(lambda x : x['loudness_start'],track.segments),dtype='float64') )
+    group.segments_loudness_start.append( np.array([s['loudness_start'] for s in track.segments], dtype='float64') )
     # analysis arrays (sections)
     analysis.cols.idx_sections_start[0] = 0
-    group.sections_start.append( np.array(map(lambda x : x['start'],track.sections),dtype='float64') )
+    group.sections_start.append( np.array([s['start'] for s in track.sections], dtype='float64') )
     analysis.cols.idx_sections_confidence[0] = 0
-    group.sections_confidence.append( np.array(map(lambda x : x['confidence'],track.sections),dtype='float64') )
+    group.sections_confidence.append( np.array([s['confidence'] for s in track.sections], dtype='float64') )
     # analysis arrays (beats
     analysis.cols.idx_beats_start[0] = 0
-    group.beats_start.append( np.array(map(lambda x : x['start'],track.beats),dtype='float64') )
+    group.beats_start.append( np.array([b['start'] for b in track.beats], dtype='float64') )
     analysis.cols.idx_beats_confidence[0] = 0
-    group.beats_confidence.append( np.array(map(lambda x : x['confidence'],track.beats),dtype='float64') )
+    group.beats_confidence.append( np.array([b['confidence'] for b in track.beats], dtype='float64') )
     # analysis arrays (bars)
     analysis.cols.idx_bars_start[0] = 0
-    group.bars_start.append( np.array(map(lambda x : x['start'],track.bars),dtype='float64') )
+    group.bars_start.append( np.array([b['start'] for b in track.bars], dtype='float64') )
     analysis.cols.idx_bars_confidence[0] = 0
-    group.bars_confidence.append( np.array(map(lambda x : x['confidence'],track.bars),dtype='float64') )
+    group.bars_confidence.append( np.array([b['confidence'] for b in track.bars], dtype='float64') )
     # analysis arrays (tatums)
     analysis.cols.idx_tatums_start[0] = 0
-    group.tatums_start.append( np.array(map(lambda x : x['start'],track.tatums),dtype='float64') )
+    group.tatums_start.append( np.array([t['start'] for t in track.tatums], dtype='float64') )
     analysis.cols.idx_tatums_confidence[0] = 0
-    group.tatums_confidence.append( np.array(map(lambda x : x['confidence'],track.tatums),dtype='float64') )
+    group.tatums_confidence.append( np.array([t['confidence'] for t in track.tatums], dtype='float64') )
     analysis.flush()
     # DONE
 
@@ -199,6 +200,9 @@ def fill_hdf5_from_musicbrainz(h5,connect):
        h5        - open song file (append mode)
        connect   - open pg connection to musicbrainz_db
     """
+    if QUERYMB is None:
+        print("Skipping MusicBrainz fill: QUERYMB (MBrainzDB) not available.")
+        return
     # get info from h5 song file
     ambid = h5.root.metadata.songs.cols.artist_mbid[0]
     artist_name = h5.root.metadata.songs.cols.artist_name[0]
@@ -210,8 +214,8 @@ def fill_hdf5_from_musicbrainz(h5,connect):
     # fill the musicbrainz arrays
     group = h5.root.musicbrainz
     musicbrainz.cols.idx_artist_mbtags[0] = 0
-    tags,tagcount = QUERYMB.get_artist_tags(connect, ambid, maxtags=20)
-    group.artist_mbtags.append( np.array(tags,dtype='string') )
+    tags, tagcount = QUERYMB.get_artist_tags(connect, ambid, maxtags=20)
+    group.artist_mbtags.append( np.array(tags,dtype='S') ) # S for bytestring
     group.artist_mbtags_count.append( np.array(tagcount,dtype='float64') )
     # done, flush
     musicbrainz.flush()
@@ -236,7 +240,7 @@ def fill_hdf5_aggregate_file(h5,h5_filenames,summaryfile=False):
         # get number of songs in new file
         nSongs = get_num_songs(h5tocopy)
         # iterate over songs in one HDF5 (1 if regular file, more if aggregate file)
-        for songidx in xrange(nSongs):
+        for songidx in range(nSongs):
             # METADATA
             row = h5.root.metadata.songs.row
             row["artist_familiarity"] = get_artist_familiarity(h5tocopy,songidx)
@@ -381,7 +385,7 @@ def create_song_file(h5filename,title='H5 Song File',force=False,complevel=1):
         if os.path.exists(h5filename):
             raise ValueError('file exists, can not create HDF5 song file')
     # create the H5 file
-    h5 = tables.openFile(h5filename, mode='w', title='H5 Song File')
+    h5 = tables.open_file(h5filename, mode='w', title='H5 Song File')
     # set filter level
     h5.filters = tables.Filters(complevel=complevel,complib='zlib')
     # setup the groups and tables
@@ -438,7 +442,7 @@ def create_aggregate_file(h5filename,title='H5 Aggregate File',force=False,expec
     if summaryfile:
         title = 'H5 Summary File'
     # create the H5 file
-    h5 = tables.openFile(h5filename, mode='w', title='H5 Song File')
+    h5 = tables.open_file(h5filename, mode='w', title='H5 Song File')
     # set filter level
     h5.filters = tables.Filters(complevel=complevel,complib='zlib')
     # setup the groups and tables
@@ -521,24 +525,24 @@ def open_h5_file_read(h5filename):
     """
     Open an existing H5 in read mode.
     """
-    return tables.openFile(h5filename, mode='r')
+    return tables.open_file(h5filename, mode='r')
 
 def open_h5_file_append(h5filename):
     """
     Open an existing H5 in append mode.
     """
-    return tables.openFile(h5filename, mode='a')
+    return tables.open_file(h5filename, mode='a')
 
 
 ################################################ MAIN #####################################
 
 def die_with_usage():
-    """ HELP MENU """
-    print 'hdf5_utils.py'
-    print 'by T. Bertin-Mahieux (2010) Columbia University'
-    print ''
-    print 'should be used as a library, contains functions to create'
-    print 'HDF5 files for the Million Song Dataset project'
+    print("""hdf5_utils.py
+by T. Bertin-Mahieux (2010) Columbia University
+
+This script should be used as a library.
+It contains functions to create HDF5 files for the Million Song Dataset project.
+""")
     sys.exit(0)
 
 
@@ -546,5 +550,3 @@ if __name__ == '__main__':
 
     # help menu
     die_with_usage()
-
-

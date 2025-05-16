@@ -32,8 +32,8 @@ import sys
 try:
     from stemming.porter2 import stem
 except ImportError:
-    print 'You need to install the following stemming package:'
-    print 'http://pypi.python.org/pypi/stemming/1.0'
+    print('You need to install the following stemming package:')
+    print('http://pypi.python.org/pypi/stemming/1.0')
     sys.exit(0)
 
 
@@ -68,19 +68,16 @@ def lyrics_to_bow(lyrics):
                    '{', '}', '/', '\\', '_', '|', '-', '@', '#', '*')
     for p in punctuation:
         lyrics_flat = lyrics_flat.replace(p, '')
-    words = filter(lambda x: x.strip() != '', lyrics_flat.split(' '))
+    words = [word for word in lyrics_flat.split(' ') if word.strip() != '']
     # stem words
-    words = map(lambda x: stem(x), words)
+    words = [stem(word) for word in words]
     bow = {}
     for w in words:
-        if not w in bow.keys():
-            bow[w] = 1
-        else:
-            bow[w] += 1
+        bow[w] = bow.get(w, 0) + 1
     # remove special words that are wrong
     fake_words = ('>', '<', 'outro~')
-    bowwords = bow.keys()
-    for bw in bowwords:
+    # Iterate over a copy of keys if modifying the dictionary
+    for bw in list(bow.keys()): 
         if bw in fake_words:
             bow.pop(bw)
         elif bw.find(']') >= 0:
@@ -96,17 +93,17 @@ def lyrics_to_bow(lyrics):
 
 def die_with_usage():
     """ HELP MENU """
-    print 'lyrics_to_bow.py'
-    print '   by T. Bertin-Mahieux (2011) Columbia University'
-    print '      tb2332@columbia.edu'
-    print 'This code shows how we transformed lyrics into bag-of-words.'
-    print 'It is mostly intended to be used as a library, but you can pass'
-    print 'in lyrics and we print the resulting dictionary.'
-    print ''
-    print 'USAGE:'
-    print '  ./lyrics_to_bow.py <lyrics>'
-    print 'PARAMS:'
-    print '    <lyrics>  - lyrics as one string'
+    print('lyrics_to_bow.py')
+    print('   by T. Bertin-Mahieux (2011) Columbia University')
+    print('      tb2332@columbia.edu')
+    print('This code shows how we transformed lyrics into bag-of-words.')
+    print('It is mostly intended to be used as a library, but you can pass')
+    print('in lyrics and we print the resulting dictionary.')
+    print('')
+    print('USAGE:')
+    print('  ./lyrics_to_bow.py "your lyrics text here"')
+    print('PARAMS:')
+    print('    <lyrics>  - lyrics as one string (use quotes if it contains spaces)')
     sys.exit(0)
 
 
@@ -117,20 +114,17 @@ if __name__ == '__main__':
         die_with_usage()
 
     # params (lyrics)
-    lyrics = ''
-    for word in sys.argv[2:]:
-        lyrics += ' ' + word
-    lyrics = lyrics.strip()
+    lyrics = " ".join(sys.argv[1:])
 
     # make bag of words
     bow = lyrics_to_bow(lyrics)
     if bow is None:
-        print 'ERROR, maybe there was not enough words to be realistic?'
+        print('ERROR, maybe there were not enough words to be realistic?')
         sys.exit(0)
 
     # print result
     try:
         from operator import itemgetter
-        print sorted(bow.items(), key=itemgetter(1), reverse=True)
+        print(sorted(bow.items(), key=itemgetter(1), reverse=True))
     except ImportError:
-        print bow
+        print(bow) # itemgetter not found, print as is

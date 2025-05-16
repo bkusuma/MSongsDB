@@ -81,7 +81,7 @@ def list_all(maindir):
             aid,ambid,tid,aname = get_artistid_trackid_artistname(f)
             assert aid != '','null artist id in track file: '+f
             # check if we know that artist
-            if aid in results.keys():
+            if aid in results:
                 continue
             # we add to the results dictionary
             results[aid] = (ambid,tid,aname)
@@ -91,18 +91,18 @@ def list_all(maindir):
 
 def die_with_usage():
     """ HELP MENU """
-    print 'list_all_artists.py'
-    print '   by T. Bertin-Mahieux (2010) Columbia University'
-    print ''
-    print 'usage:'
-    print '  python list_all_artists.py <DATASET DIR> output.txt'
-    print ''
-    print 'This code lets you list all artists contained in all'
-    print 'subdirectories of a given directory.'
-    print 'This script puts the result in a text file, but its main'
-    print 'function can be used by other codes.'
-    print 'The txt file format is: (we use <SEP> as separator symbol):'
-    print 'artist Echo Nest ID<SEP>artist Musicbrainz ID<SEP>one track Echo Nest ID<SEP>artist name'
+    print('list_all_artists.py')
+    print('   by T. Bertin-Mahieux (2010) Columbia University')
+    print('')
+    print('usage:')
+    print('  python list_all_artists.py <DATASET DIR> output.txt')
+    print('')
+    print('This code lets you list all artists contained in all')
+    print('subdirectories of a given directory.')
+    print('This script puts the result in a text file, but its main')
+    print('function can be used by other codes.')
+    print('The txt file format is: (we use <SEP> as separator symbol):')
+    print('artist Echo Nest ID<SEP>artist Musicbrainz ID<SEP>one track Echo Nest ID<SEP>artist name')
     sys.exit(0)
 
 
@@ -127,27 +127,27 @@ if __name__ == '__main__':
 
     # sanity checks
     if not os.path.isdir(maindir):
-        print maindir,'is not a directory'
+        print(maindir, 'is not a directory')
         sys.exit(0)
     if os.path.isfile(output):
-        print 'output file:',output,'exists, please delete or choose new one'
+        print('output file:', output, 'exists, please delete or choose new one')
         sys.exit(0)
 
     # go!
     t1 = time.time()
     dArtists = list_all(maindir)
     t2 = time.time()
-    stimelength = str(datetime.timedelta(seconds=t2-t1))
-    print 'number of artists found:', len(dArtists),'in',stimelength
+    stimelength = str(datetime.timedelta(seconds=t2 - t1))
+    print('number of artists found:', len(dArtists), 'in', stimelength)
 
 
     # print to file
-    artistids = dArtists.keys()
+    artistids = list(dArtists.keys())
     try:
         import numpy
         artistids = numpy.sort(artistids)
     except ImportError:
-        print 'artists IDs will not be sorted alphabetically (numpy not installed)'
+        print('artists IDs will not be sorted alphabetically (numpy not installed)')
     f = open(output,'w')
     for aid in artistids:
         ambid,tid,aname = dArtists[aid]
@@ -158,37 +158,37 @@ if __name__ == '__main__':
     try:
         import numpy as np
     except ImportError:
-        print 'no numpy, no fun stats!'
+        print('no numpy, no fun stats!')
         sys.exit(0)
     import re
-    print 'FUN STATS!'
+    print('FUN STATS!')
     # name length
-    name_lengths = map(lambda x: len(dArtists[x][2]), artistids)
-    print 'average artist name length:',np.mean(name_lengths),'(std =',str(np.std(name_lengths))+')'
+    name_lengths = [len(dArtists[x][2]) for x in artistids]
+    print('average artist name length:', np.mean(name_lengths), '(std =', str(np.std(name_lengths)) + ')')
     # most common word
     dWords = {}
     for ambid,tid,aname in dArtists.values():
         words = re.findall(r'\w+', aname.lower())
         for w in words:
-            if w in dWords.keys():
+            if w in dWords:
                 dWords[w] += 1
             else:
                 dWords[w] = 1
-    words = dWords.keys()
-    wfreqs = map(lambda x: dWords[x], words)
+    words = list(dWords.keys())
+    wfreqs = [dWords[x] for x in words]
     pos = np.argsort(wfreqs)
     pos = pos[-1::-1]
-    print 'number of different words used:',len(words)
-    print 'the most used words in artist names are:'
+    print('number of different words used:', len(words))
+    print('the most used words in artist names are:')
     for p in pos[:5]:
-        print '*',words[p],'(freq='+str(wfreqs[p])+')'
-    print 'some artists using the 30th most frequent word ('+words[pos[30]]+'):'
+        print('*', words[p], '(freq=' + str(wfreqs[p]) + ')')
+    print('some artists using the 30th most frequent word (' + words[pos[30]] + '):')
     frequentword = words[pos[30]]
     cnt = 0
     for ambid,tid,aname in dArtists.values():
         words = re.findall(r'\w+', aname.lower())
         if frequentword in words:
-            print '*',aname
+            print('*', aname)
             cnt += 1
         if cnt >= min(5,wfreqs[pos[10]]):
             break

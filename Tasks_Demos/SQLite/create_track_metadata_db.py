@@ -36,8 +36,8 @@ import time
 try:
     import numpy as np
 except ImportError:
-    print('you need numpy installed to use this program')
-    print('run `pip install numpy` and try again')
+    print('You need numpy installed to use this program.')
+    print('Run `pip install numpy` and try again.')
     sys.exit(0)
 
 
@@ -49,6 +49,8 @@ def encode_string(s):
     EXAMPLE:
       That's my boy! -> 'That''s my boy!'
     """
+    if isinstance(s, bytes):
+        s = s.decode('utf-8')
     return "'" + s.replace("'", "''") + "'"
 
 
@@ -212,19 +214,19 @@ def add_indices_to_db(conn, verbose=0):
 
 
 def die_with_usage():
-    print(
-        """ HELP MENU 
-    print 'Command to create the track_metadata SQLite database'
-    print 'to launch (it might take a while!):'
-    print '   python create_track_metadata_db.py [FLAGS] <MSD dir> <tmdb>'
-    print 'PARAMS'
-    print '   MSD dir   - directory containing .h5 song files in sub dirs'
-    print '        tmdb - filename for the database (track_metadata.db)'
-    print 'FLAGS'
-    print '  -shsdata f  - file containing the SHS dataset'
-    print '                (you can simply concatenate train and test)'
-    print '  -verbose    - print every query'
-    """)
+    print("""HELP MENU
+Command to create the track_metadata SQLite database
+To launch (it might take a while!):
+  python create_track_metadata_db.py [FLAGS] <MSD dir> <tmdb>
+
+PARAMS:
+  MSD dir   - directory containing .h5 song files in sub dirs
+  tmdb      - filename for the database (track_metadata.db)
+
+FLAGS:
+  -shsdata f  - file containing the SHS dataset
+                (you can simply concatenate train and test)
+  -verbose    - print every query""")
     sys.exit(0)
 
 
@@ -263,12 +265,12 @@ if __name__ == '__main__':
 
     # sanity checks
     if not os.path.isdir(maindir):
-        print('ERROR: %s is not a directory.' % maindir)
+        print(f'ERROR: {maindir} is not a directory.')
     if os.path.exists(dbfile):
-        print('ERROR: %s already exists! delete or provide a new name' % dbfile)
+        print(f'ERROR: {dbfile} already exists! Delete or provide a new name.')
         sys.exit(0)
     if shsdataset != '' and not os.path.isfile(shsdataset):
-        print('ERROR %s does not exist.' % shsdataset)
+        print(f'ERROR: {shsdataset} does not exist.')
         sys.exit(0)
 
     # start time
@@ -292,34 +294,30 @@ if __name__ == '__main__':
     conn.commit()
     t2 = time.time()
     stimelength = str(datetime.timedelta(seconds=t2 - t1))
-    print('added the content of', cnt_files, 'files to database:', dbfile)
-    print('it took:', stimelength)
+    print('Added the content of', cnt_files, 'files to database:', dbfile)
+    print('It took:', stimelength)
 
     # add SHS data
     if shsdataset != '':
-        print('We add SHS data from file: %s' % shsdataset)
+        print(f'Adding SHS data from file: {shsdataset}')
         # iterate over SHS file
-        shs = open(shsdataset, 'r')
-        for line in shs:
-            if line == '' or line.strip() == '':
-                continue
-            if line[0] == '#':
-                continue
-            # work
-            if line[0] == '%':
-                works = map(lambda w: int(w),
-                            line[1:].split(' ')[0].split(',')[:-1])
-                work = min(works)
-                continue
-            # regular line
-            tid, aid, perf = line.strip().split('<SEP>')
-            q = "UPDATE songs SET shs_perf=" + perf + ", shs_work=" + str(work)
-            q += " WHERE track_id='" + tid + "'"
-            if verbose > 0:
-                print(q)
-            conn.execute(q)
-        # iteration done
-        shs.close()
+        with open(shsdataset, 'r', encoding='utf-8') as shs_file:
+            work = -1 # Initialize work, assuming it's set by a '%' line before data lines
+            for line in shs_file:
+                stripped_line = line.strip()
+                if not stripped_line or stripped_line.startswith('#'):
+                    continue
+                if stripped_line.startswith('%'):
+                    works_str = stripped_line[1:].split(' ')[0].split(',')[:-1]
+                    works = [int(w) for w in works_str if w] # Ensure w is not empty
+                    work = min(works) if works else -1 # Handle case where works might be empty
+                    continue
+                # regular line
+                tid, aid, perf = stripped_line.split('<SEP>')
+                q = f"UPDATE songs SET shs_perf={perf}, shs_work={work} WHERE track_id='{tid}'"
+                if verbose > 0:
+                    print(q)
+                conn.execute(q)
         conn.commit()
 
     # add indices
@@ -334,9 +332,9 @@ if __name__ == '__main__':
     assert nrows_before == nrows_after, 'Lost rows during indexing?'
     if nrows_before != 1000000:
         print('*********************************************************')
-        print('We got', nrows_before, 'rows.')
-        print('This is not the full MillionSongDataset! just checking...')
-        print( '*********************************************************')
+        print(f'We got {nrows_before} rows.')
+        print('This is not the full MillionSongDataset! Just checking...')
+        print('*********************************************************')
 
     # close connection
     conn.close()
@@ -345,6 +343,6 @@ if __name__ == '__main__':
     t3 = time.time()
 
     # DONE
-    print('done! (indices included) database:', dbfile)
+    print('Done! (indices included) database:', dbfile)
     stimelength = str(datetime.timedelta(seconds=t3 - t1))
-    print('execution time:', stimelength)
+    print('Execution time:', stimelength)

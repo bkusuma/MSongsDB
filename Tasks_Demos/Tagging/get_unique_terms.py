@@ -25,11 +25,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import datetime
+import glob
+import hashlib
 import os
 import sys
-import glob
 import time
-import datetime
 import numpy as np
 
 
@@ -51,13 +52,17 @@ def put_term_in_hash_table(hash_table,term):
     Function to get the hash code of a term and put it in the
     given table
     """
-    np.random.seed(hash(term))
+    #np.random.seed(hash(term))
+    np.random.seed(
+        int.from_bytes(hashlib.sha256(term).digest()[:4], 'little')
+    )
     bucket_idx = np.random.randint(NUMBUCKETS)
     hash_table[bucket_idx].add(term)
 
-
+# python get_unique_terms.py "C:\Users\foste\Desktop\Projects\delistyle\data\subsets\millionsongsubset" "C:\Users\foste\Desktop\Projects\delistyle\data\reference_lists\terms_list.txt" "C:\Users\foste\Desktop\Projects\delistyle\data\reference_lists\mbtags_list.txt" "C:\Users\foste\Desktop\Projects\delistyle\data\reference_lists\artistlist.txt"
 def die_with_usage():
-    """ HELP MENU """
+    print(""" 
+    HELP MENU 
     print 'get_unique_terms.py'
     print '  by T. Bertin-Mahieux (2010) Colubia University'
     print 'GOAL'
@@ -71,17 +76,20 @@ def die_with_usage():
     print '   artist list       - text file: artistID<SEP>artistMBID<SEP>track<SEP>...   OPTIONAL BUT FASTER'
     print ''
     print 'for artist list, check: /Tasks_Demos/NamesAnalysis/list_all_artists.py'
+    """)
     sys.exit(0)
 
 
 if __name__ == '__main__':
 
     # WARNING
+    print("""
     print '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
     print 'WARNING: if you have the artist_term.db SQLite database,'
     print 'the unique terms are in it and it takes only seconds to retrieve.'
     print 'see /Tasks_Demos/SQLite to know how'
     print '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+    """)
 
     # help menu
     if len(sys.argv) < 4:
@@ -104,13 +112,13 @@ if __name__ == '__main__':
 
     # check if file exists!
     if output_terms == output_mbtags:
-        print 'output files most be different'
+        print('output files must be different')
         sys.exit(0)
     if os.path.exists(output_terms):
-        print output_terms,'already exists! delete or provide a new name'
+        print(output_terms,'already exists! delete or provide a new name')
         sys.exit(0)
     if os.path.exists(output_mbtags):
-        print output_mbtags,'already exists! delete or provide a new name'
+        print(output_mbtags,'already exists! delete or provide a new name')
         sys.exit(0)
     
 
@@ -143,37 +151,38 @@ if __name__ == '__main__':
     else:
         f = open(artistfile,'r')
         trackids = []
-        for line in f.xreadlines():
+        for line in f:
             if line == '' or line.strip() == '':
                 continue
             trackids.append( line.split('<SEP>')[2] )
         f.close()
-        print 'found',len(trackids),'artists in file:',artistfile
+        print('found',len(trackids),'artists in file:',artistfile)
         for trackid in trackids:
             f = os.path.join(maindir,path_from_trackid(trackid))
-            h5 = hdf5_utils.open_h5_file_read(f)
-            terms = get_artist_terms(h5)
-            mbtags = get_artist_mbtags(h5)
-            h5.close()
-            # iterate over terms
-            for t in terms:
-                put_term_in_hash_table(hash_table_terms,t)
-            for t in mbtags:
-                put_term_in_hash_table(hash_table_mbtags,t)
-            cnt_files += 1
+            if os.path.exists(f):
+                h5 = hdf5_utils.open_h5_file_read(f)
+                terms = get_artist_terms(h5)
+                mbtags = get_artist_mbtags(h5)
+                h5.close()
+                # iterate over terms
+                for t in terms:
+                    put_term_in_hash_table(hash_table_terms,t)
+                for t in mbtags:
+                    put_term_in_hash_table(hash_table_mbtags,t)
+                cnt_files += 1
 
     # count all terms and mbtags
     t2 = time.time()
     stimelength = str(datetime.timedelta(seconds=t2-t1))
-    print 'all terms/mbtags added from',cnt_files,'files in',stimelength
+    print('all terms/mbtags added from',cnt_files,'files in',stimelength)
     nUniqueTerms = 0
     for k in range(NUMBUCKETS):
         nUniqueTerms += len(hash_table_terms[k])
-    print 'There are',nUniqueTerms,'unique terms.'
+    print('There are',nUniqueTerms,'unique terms.')
     nUniqueMbtags = 0
     for k in range(NUMBUCKETS):
         nUniqueMbtags += len(hash_table_mbtags[k])
-    print 'There are',nUniqueMbtags,'unique mbtags.'
+    print('There are',nUniqueMbtags,'unique mbtags.')
 
     # list all terms and mbtags
     allterms = [None] * nUniqueTerms
@@ -195,15 +204,21 @@ if __name__ == '__main__':
     # write to file (terms)
     f = open(output_terms,'w')
     for t in allterms:
-        f.write(t + '\n')
+        try:
+            f.write(t + '\n')
+        except TypeError:
+            f.write(t.decode("UTF-8") + "\n")
     f.close()
     # write to file (mbtags)
     f = open(output_mbtags,'w')
     for t in allmbtags:
-        f.write(t + '\n')
+        try:
+            f.write(t + '\n')
+        except TypeError:
+            f.write(t.decode("UTF-8") + "\n")
     f.close()
 
     # end time
     t3 = time.time()
     stimelength = str(datetime.timedelta(seconds=t3-t1))
-    print 'all done in',stimelength
+    print('all done in',stimelength)

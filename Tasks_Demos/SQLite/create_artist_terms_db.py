@@ -40,8 +40,8 @@ import time
 try:
     import numpy as np
 except ImportError:
-    print('you need numpy installed to use this program')
-    print('run `pip install numpy` and try again')
+    print('You need numpy installed to use this program.')
+    print('Run `pip install numpy` and try again.')
     sys.exit(0)
 
 
@@ -66,7 +66,9 @@ def encode_string(s):
     EXAMPLE:
       That's my boy! -> 'That''s my boy!'
     """
-    return "'"+s.replace("'","''")+"'"
+    if isinstance(s, bytes):
+        s = s.decode('utf-8')
+    return "'" + s.replace("'", "''") + "'"
 
 
 def create_db(filename,artistlist,termlist,mbtaglist):
@@ -211,21 +213,21 @@ def add_indices_to_db(conn,verbose=0):
     
 
 def die_with_usage():
-    print(""" HELP MENU 
-    print 'Command to create the artist_terms SQLite database'
-    print 'to launch (it might take a while!):'
-    print '   python create_artist_terms_db.py <MillionSong dir> <termlist> <mbtaglist> <artistlist> <artist_term.db>'
-    print 'PARAMS'
-    print '  MillionSong dir   - directory containing .h5 song files in sub dirs'
-    print '  termlist          - list of all possible terms (Echo Nest tags)'
-    print '  mbtaglist         - list of all possible musicbrainz tags'
-    print '  artist list       - list in form: artistid<SEP>artist_mbid<SEP>track_id<SEP>...'
-    print '  artist_terms.db   - filename for the database'
-    print ''
-    print 'for artist list, check:       /Tasks_Demos/NamesAnalysis/list_all_artists.py'
-    print '          or (faster!):       /Tasks_Demos/SQLite/list_all_artists_from_db.py'
-    print 'for termlist and mbtaglist:   /Tasks_Demos/Tagging/get_unique_terms.py'
-          """)
+    print("""HELP MENU
+Command to create the artist_terms SQLite database
+To launch (it might take a while!):
+  python create_artist_terms_db.py <MillionSong dir> <termlist> <mbtaglist> <artistlist> <artist_term.db>
+
+PARAMS:
+  MillionSong dir   - directory containing .h5 song files in sub dirs
+  termlist          - list of all possible terms (Echo Nest tags)
+  mbtaglist         - list of all possible musicbrainz tags
+  artist list       - list in form: artistid<SEP>artist_mbid<SEP>track_id<SEP>...
+  artist_terms.db   - filename for the database
+
+For artist list, check:       /Tasks_Demos/NamesAnalysis/list_all_artists.py
+          or (faster!):       /Tasks_Demos/SQLite/list_all_artists_from_db.py
+For termlist and mbtaglist:   /Tasks_Demos/Tagging/get_unique_terms.py""")
     sys.exit(0)
 
 
@@ -255,7 +257,7 @@ if __name__ == '__main__':
 
    # check if file exists!
     if os.path.exists(dbfile):
-        print( dbfile,'already exists! delete or provide a new name')
+        print(dbfile, 'already exists! Delete or provide a new name.')
         sys.exit(0) 
 
     # start time
@@ -263,41 +265,35 @@ if __name__ == '__main__':
 
     # get all terms
     allterms = []
-    f = open(termfile,'r')
-    for line in f.xreadlines():
-        if line == '' or line.strip() == '':
-            continue
-        allterms.append(line.strip())
-    f.close()
-    print('found',len(allterms),'terms in file:',termfile)
+    with open(termfile, 'r', encoding='utf-8') as f:
+        for line in f:
+            if line.strip(): # More concise check for non-empty lines
+                allterms.append(line.strip())
+    print('Found', len(allterms), 'terms in file:', termfile)
 
     # get all mbtags
     allmbtags = []
-    f = open(mbtagfile,'r')
-    for line in f.xreadlines():
-        if line == '' or line.strip() == '':
-            continue
-        allmbtags.append(line.strip())
-    f.close()
-    print('found',len(allmbtags),'mbtags in file:',mbtagfile)
+    with open(mbtagfile, 'r', encoding='utf-8') as f:
+        for line in f:
+            if line.strip():
+                allmbtags.append(line.strip())
+    print('Found', len(allmbtags), 'mbtags in file:', mbtagfile)
 
     # get all track ids per artist
     trackids = []
     artistids = []
-    f = open(artistfile,'r')
-    for line in f.xreadlines():
-        if line == '' or line.strip() == '':
-            continue
-        artistids.append( line.split('<SEP>')[0] )
-        trackids.append( line.split('<SEP>')[2] )
-    f.close()
-    print( 'found',len(trackids),'artists in file:',artistfile)
+    with open(artistfile, 'r', encoding='utf-8') as f:
+        for line in f:
+            if line.strip():
+                artistids.append(line.split('<SEP>')[0])
+                trackids.append(line.split('<SEP>')[2])
+    print('Found', len(trackids), 'artists in file:', artistfile)
 
     # create database
     create_db(dbfile,artistids,allterms,allmbtags)
     t2 = time.time()
     stimelength = str(datetime.timedelta(seconds=t2-t1))
-    print('tables created after', stimelength)
+    print('Tables created after', stimelength)
 
     # open connection
     conn = sqlite3.connect(dbfile)
@@ -315,7 +311,7 @@ if __name__ == '__main__':
     # time update
     t3 = time.time()
     stimelength = str(datetime.timedelta(seconds=t3-t1))
-    print('Looked at',cnt_files,'files, done in',stimelength)
+    print('Looked at', cnt_files, 'files, done in', stimelength)
 
     # creates indices
     add_indices_to_db(conn,verbose=0)
@@ -326,6 +322,6 @@ if __name__ == '__main__':
     # done
     t4 = time.time()
     stimelength = str(datetime.timedelta(seconds=t4-t1))
-    print('All done (including indices) in',stimelength)
+    print('All done (including indices) in', stimelength)
 
     

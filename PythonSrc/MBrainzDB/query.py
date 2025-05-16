@@ -57,14 +57,14 @@ def connect_mbdb():
     try:
         connect = pg.connect('musicbrainz_db','localhost',-1,None,None,
                              USER,PASSWD)
-    except TypeError, e:
-        print 'CONNECT_MBDB: type error, should not happen:',e
+    except TypeError as e:
+        print('CONNECT_MBDB: type error, should not happen:',e)
         return None
-    except SyntaxError, e:
-        print 'CONNECT_MBDB: syntax error, should not happen:',e
+    except SyntaxError as e:
+        print('CONNECT_MBDB: syntax error, should not happen:',e)
         return None
-    except pg.InternalError, e:
-        print 'CONNECT_MBDB, internal error:', e
+    except pg.InternalError as e:
+        print('CONNECT_MBDB, internal error:', e)
         return None
     # check for levenshtein function
     #q = "SELECT levenshtein('allo','allo2')"
@@ -205,25 +205,29 @@ def debug_from_song_file(connect,h5path,verbose=0):
     gotmbid=1
     if ambid=='':
         gotmbid = 0
-        if verbose>0: print 'no mb id for:',artist
+        if (verbose>0): 
+            print('no mb id for:',artist)
     # year
     year = find_year_safemode(connect,ambid,title,release,artist)
     gotyear = 1 if year > 0 else 0
-    if verbose>0: print 'no years for:',artist,'|',release,'|',title
+    if (verbose>0): 
+        print('no years for:',artist,'|',release,'|',title)
     # tags
     tags,counts = get_artist_tags(connect,ambid)
     gottags = 1 if len(tags) > 0 else 0
-    if gottags == 0 and verbose>0: print 'no tags for:',artist
+    if gottags == 0 and verbose>0: 
+        print('no tags for:',artist)
     # return indicator for mbid, year, tag
     return gotmbid,gotyear,gottags
 
 
 def die_with_usage():
-    """ HELP MENU """
+    print("""
     print 'This contains library functions to query the musicbrainz database'
     print 'For debugging:'
     print '    python query.py -hdf5 <list of songs>'
     print '    e.g. python query.py -hdf5 MillionSong/A/A/*/*.h5'
+    """)
     sys.exit(0)
 
 
@@ -260,10 +264,10 @@ if __name__ == '__main__':
         connect.close()
         t2 = time.time()
         stimelength = str(datetime.timedelta(seconds=t2-t1))
-        print 'has musicbrainz id for',cntmbid,'out of',len(paths)
-        print 'found years for',cntyears,'out of',len(paths)
-        print 'found tags for',cnttags,'out of',len(paths)
-        print 'all done in',stimelength
+        print('has musicbrainz id for',cntmbid,'out of',len(paths))
+        print('found years for',cntyears,'out of',len(paths))
+        print( 'found tags for',cnttags,'out of',len(paths))
+        print('all done in',stimelength)
         sys.exit(0)
 
 

@@ -44,17 +44,17 @@ def encode_string(s):
 
 def die_with_usage():
     """ HELP MENU """
-    print 'mxm_dataset_to_db.py'
-    print '   by T. Bertin-Mahieux (2011) Columbia University'
-    print '      tb2332@columbia.edu'
-    print 'This code puts the musiXmatch dataset into an SQLite database.'
-    print ''
-    print 'USAGE:'
-    print '  ./mxm_dataset_to_db.py <train> <test> <output.db>'
-    print 'PARAMS:'
-    print '      <train>  - mXm dataset text train file'
-    print '       <test>  - mXm dataset text test file'
-    print '  <output.db>  - SQLite database to create'
+    print('mxm_dataset_to_db.py')
+    print('   by T. Bertin-Mahieux (2011) Columbia University')
+    print('      tb2332@columbia.edu')
+    print('This code puts the musiXmatch dataset into an SQLite database.')
+    print('')
+    print('USAGE:')
+    print('  ./mxm_dataset_to_db.py <train> <test> <output.db>')
+    print('PARAMS:')
+    print('      <train>  - mXm dataset text train file')
+    print('       <test>  - mXm dataset text test file')
+    print('  <output.db>  - SQLite database to create')
     sys.exit(0)
 
 
@@ -71,13 +71,13 @@ if __name__ == '__main__':
 
     # sanity checks
     if not os.path.isfile(trainf):
-        print 'ERROR: %s does not exist.' % trainf
+        print('ERROR: %s does not exist.' % trainf)
         sys.exit(0)
     if not os.path.isfile(testf):
-        print 'ERROR: %s does not exist.' % testf
+        print('ERROR: %s does not exist.' % testf)
         sys.exit(0)
     if os.path.exists(outputf):
-        print 'ERROR: %s already exists.' % outputf
+        print('ERROR: %s already exists.' % outputf)
         sys.exit(0)
 
     # open output SQLite file
@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
     # get words, put them in the words table
     f = open(trainf, 'r')
-    for line in f.xreadlines():
+    for line in f:
         if line == '':
             continue
         if line[0] == '%':
@@ -115,14 +115,14 @@ if __name__ == '__main__':
     tmpwords = res.fetchall()
     assert len(tmpwords) == len(topwords), 'Number of words issue.'
     for k in range(len(tmpwords)):
-        assert tmpwords[k][0] == k + 1, 'ROWID issue.'
-        assert tmpwords[k][1].encode('utf-8') == topwords[k], 'ROWID issue.'
-    print "'words' table filled, checked."
+        assert tmpwords[k][0] == k + 1, 'ROWID issue for word: %s' % topwords[k]
+        assert tmpwords[k][1] == topwords[k], 'Word mismatch: DB has "%s", file has "%s" for ROWID %d' % (tmpwords[k][1], topwords[k], k+1)
+    print("'words' table filled, checked.")
 
     # we put the train data in the dataset
     f = open(trainf, 'r')
     cnt_lines = 0
-    for line in f.xreadlines():
+    for line in f:
         if line == '' or line.strip() == '':
             continue
         if line[0] in ('#', '%'):
@@ -139,18 +139,18 @@ if __name__ == '__main__':
             conn.execute(q)
         # verbose
         cnt_lines += 1
-        if cnt_lines % 15000 == 0:
-            print 'Done with %d train tracks.' % cnt_lines
+        if cnt_lines % 50000 == 0: # Reduced frequency of commit for potentially better performance
+            print('Done with %d train tracks.' % cnt_lines)
             conn.commit()
     f.close()
     conn.commit()
-    print 'Train lyrics added.'
+    print('Train lyrics added.')
 
     # we put the test data in the dataset
     # only difference from train: is_test is now 1
     f = open(testf, 'r')
     cnt_lines = 0
-    for line in f.xreadlines():
+    for line in f:
         if line == '' or line.strip() == '':
             continue
         if line[0] in ('#', '%'):
@@ -167,12 +167,12 @@ if __name__ == '__main__':
             conn.execute(q)
         # verbose
         cnt_lines += 1
-        if cnt_lines % 15000 == 0:
-            print 'Done with %d test tracks.' % cnt_lines
+        if cnt_lines % 50000 == 0: # Reduced frequency of commit
+            print('Done with %d test tracks.' % cnt_lines)
             conn.commit()
     f.close()
     conn.commit()
-    print 'Test lyrics added.'
+    print('Test lyrics added.')
 
     # create indices
     q = "CREATE INDEX idx_lyrics1 ON lyrics ('track_id')"
@@ -186,7 +186,7 @@ if __name__ == '__main__':
     q = "CREATE INDEX idx_lyrics5 ON lyrics ('is_test')"
     conn.execute(q)
     conn.commit()
-    print 'Indices created.'
+    print('Indices created.')
 
     # close output SQLite connection
     conn.close()

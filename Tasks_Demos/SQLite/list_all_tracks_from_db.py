@@ -37,25 +37,24 @@ import time
 try:
     import numpy as np
 except ImportError:
-    print('you need numpy installed to use this program')
-    print('run `pip install numpy` and try again')
+    print('You need numpy installed to use this program.')
+    print('Run `pip install numpy` and try again.')
     sys.exit(0)
 
 
 def die_with_usage():
     print("""
-    HELP MENU
-    print 'list_all_tracks_from_db.py'
-    print '   by T. Bertin-Mahieux (2010) Columbia University'
-    print 'Code to create a list of all tracks in the dataset as'
-    print 'a text file. Assumes track_metadata.db already exists.'
-    print "Format is (IDs are EchoNest's):"
-    print 'trackID<SEP>songID<SEP>artist name<SEP>song title'
-    print ' '
-    print 'usage:'
-    print '   python list_all_tracks_from_db.py <track_metadata.db> <output.txt>'
-    print ''
-          """)
+HELP MENU
+list_all_tracks_from_db.py
+  by T. Bertin-Mahieux (2010) Columbia University
+
+Code to create a list of all tracks in the dataset as
+a text file. Assumes track_metadata.db already exists.
+Format is (IDs are EchoNest's):
+  trackID<SEP>songID<SEP>artist name<SEP>song title
+
+Usage:
+  python list_all_tracks_from_db.py <track_metadata.db> <output.txt>""")
     sys.exit(0)
 
 
@@ -71,10 +70,10 @@ if __name__ == '__main__':
 
     # sanity check
     if not os.path.isfile(dbfile):
-        print('ERROR: can not find database:',dbfile)
+        print('ERROR: Cannot find database:', dbfile)
         sys.exit(0)
     if os.path.exists(output):
-        print('ERROR: file',output,'exists, delete or provide a new name')
+        print('ERROR: File', output, 'exists, delete or provide a new name.')
         sys.exit(0)
 
     # start time
@@ -93,17 +92,17 @@ if __name__ == '__main__':
 
     # sanity check
     if len(alldata) != 1000000:
-        print('NOT A MILLION TRACKS FOUND!')
+        print(f'WARNING: Expected 1,000,000 tracks, but found {len(alldata)}.')
 
     # write to file
-    f = open(output,'w')
-    for data in alldata:
-        f.write(data[0]+'<SEP>'+data[1]+'<SEP>')
-        f.write( data[2].encode('utf-8') +'<SEP>')
-        f.write( data[3].encode('utf-8') + '\n' )
-    f.close()
+    with open(output, 'w', encoding='utf-8') as f:
+        for track_id, song_id, artist_name, title in alldata:
+            # Ensure all parts are strings
+            f.write(str(track_id) + '<SEP>' + str(song_id) + '<SEP>')
+            f.write(str(artist_name) + '<SEP>')
+            f.write(str(title) + '\n')
 
     # done
     t2 = time.time()
     stimelength = str(datetime.timedelta(seconds=t2-t1))
-    print('file',output,'created in',stimelength)
+    print('File', output, 'created in', stimelength)

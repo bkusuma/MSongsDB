@@ -37,8 +37,8 @@ try:
     import numpy as np
     import sqlite3
 except ImportError:
-    print('you need sqlite3 and numpy installed to use this program')
-    print('run `pip install numpy sqlite3` and try again')
+    print('You need sqlite3 and numpy installed to use this program.')
+    print('Run `pip install numpy sqlite3` and try again.')
     sys.exit(0)
 
 
@@ -50,20 +50,22 @@ def encode_string(s):
     EXAMPLE:
       That's my boy! -> 'That''s my boy!'
     """
-    return "'"+s.replace("'","''")+"'"
+    if isinstance(s, bytes):
+        s = s.decode('utf-8')
+    return "'" + s.replace("'", "''") + "'"
 
 
 def die_with_usage():
     """ HELP MENU """
-    print 'demo_artist_similarity.py'
-    print '  by T. Bertin-Mahieux (2011) Columbia University'
-    print '     tb2332@columbia.edu'
-    print 'This codes gives examples on how to query the database artist_similarity.db'
-    print 'To first create this database, see: create_artist_similarity_db.py'
-    print 'Note that you should first check: demo_track_metadata.py if you are not'
-    print 'familiar with SQLite.'
-    print 'usage:'
-    print '   python demo_artist_similarity.py <database path>'
+    print('demo_artist_similarity.py')
+    print('  by T. Bertin-Mahieux (2011) Columbia University')
+    print('     tb2332@columbia.edu')
+    print('This code gives examples on how to query the database artist_similarity.db.')
+    print('To first create this database, see: create_artist_similarity_db.py')
+    print('Note that you should first check: demo_track_metadata.py if you are not')
+    print('familiar with SQLite.')
+    print('\nUsage:')
+    print('  python demo_artist_similarity.py <database path>')
     sys.exit(0)
 
 
@@ -83,49 +85,49 @@ if __name__ == '__main__':
     # NOTE: we could query directly from the connection object
     c = conn.cursor()
 
-    print '*************** GENERAL SQLITE DEMO ***************************'
+    print('*************** GENERAL SQLITE DEMO ***************************')
 
     # list all tables in that dataset
     # note that sqlite does the actual job when we call fetchall() or fetchone()
     q = "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
     res = c.execute(q)
-    print "* tables contained in that SQLite file/database (there should be 3):"
-    print res.fetchall()
+    print("* Tables contained in that SQLite file/database (there should be 3):")
+    print(res.fetchall())
 
     # list all indices
     q = "SELECT name FROM sqlite_master WHERE type='index' ORDER BY name"
     res = c.execute(q)
-    print '* indices in the database to make reads faster:'
-    print res.fetchall()
+    print('* Indices in the database to make reads faster:')
+    print(res.fetchall())
 
-    print '*************** ARTISTS TABLE DEMO ****************************'
+    print('*************** ARTISTS TABLE DEMO ****************************')
 
     # list all artist ID
     q = "SELECT artist_id FROM artists"
     res = c.execute(q)
-    print "* number of artist Echo Nest ID in 'artists' table:"
-    print len(res.fetchall())
+    print("* Number of artist Echo Nest IDs in 'artists' table:")
+    print(len(res.fetchall()))
 
-    print '*************** ARTIST SIMILARITY DEMO ************************'
+    print('*************** ARTIST SIMILARITY DEMO ************************')
 
     # get a random similarity relationship
     q = "SELECT target,similar FROM similarity LIMIT 1"
     res = c.execute(q)
     a,s = res.fetchone()
-    print '* one random similarity relationship (A->B means B similar to A):'
-    print a,'->',s
+    print('* One random similarity relationship (A->B means B similar to A):')
+    print(a, '->', s)
 
     # count number of similar artist to a in previous call
     q = "SELECT Count(similar) FROM similarity WHERE target="+encode_string(a)
     res = c.execute(q)
-    print '* artist',a,'has that many similar artists in the dataset:'
-    print res.fetchone()[0]
+    print('* Artist', a, 'has that many similar artists in the dataset:')
+    print(res.fetchone()[0])
 
     # count number of artist s (c queries up) is similar to
     q = "SELECT Count(target) FROM similarity WHERE similar="+encode_string(s)
     res = c.execute(q)
-    print '* artist',s,'is similar to that many artists in the dataset:'
-    print res.fetchone()[0]
+    print('* Artist', s, 'is similar to that many artists in the dataset:')
+    print(res.fetchone()[0])
 
     # DONE
     # close cursor and connection
@@ -135,10 +137,3 @@ if __name__ == '__main__':
     conn.close()
 
     
-
-
-
-
-
-
-
